@@ -41,7 +41,7 @@ And it stays out of your way: toasts go to the Action Center, and only important
 | | Feature | Notes |
 |---|---|---|
 | 📊 | **Live status** | Progress, layer, time left, elapsed, nozzle / bed / chamber temps, Wi-Fi signal |
-| 🎨 | **AMS trays** | Colour, material, remaining % and a little gauge per slot |
+| 🎨 | **AMS trays** | Colour and material per slot; remaining % is only reliable for RFID spools |
 | 🔔 | **Event alerts** | Finished / failed / paused / filament change / HMS error / offline — each toggleable |
 | 🔊 | **Three channels** | Windows toast (Action Center) + topmost popup + synthesised chime |
 | 🏷️ | **Model detection** | A1 mini / A1 / P1P / P1S / P2S / X1 / X1 Carbon / X1E / H2D series |
@@ -308,6 +308,37 @@ BambuMonitor/
 - **Cloud**: official APIs `api.bambulab.cn` / `api.bambulab.com` (auto-selected by region), cloud MQTT `cn.mqtt.bambulab.com:8883`, username `u_<uid>`, password `accessToken`
 
 ---
+
+## 🚧 Known limitations & roadmap (PRs welcome)
+
+This is a personal side project — several things are only "good enough to look at", not solid.
+**Listed honestly here** so nobody is misled:
+
+| Area | Current state | Notes / what we'd like to do |
+|---|---|---|
+| **AMS humidity** | Only the firmware's **1–5 level** | The printer reports a dryness *level*, **not a relative humidity %**. The UI labels it as a level. Converting to RH% would need a calibration curve — data welcome |
+| **AMS temperature** | A1 mini / AMS Lite **don't report it**, shows `—` | Models with a sensor (X1 / H2 series) display it normally |
+| **AMS remaining** | Raw firmware `remain` field | **Non-RFID spools always report 100%** and are useless; the UI now says "remaining unknown (non-RFID spool)". Could be estimated from actual filament length/weight |
+| Multiple printers | One at a time | Device list + switching |
+| Camera | Not supported | LAN mode could pull snapshots on port 6000 |
+| Clickable toasts | Clicking a toast doesn't open the panel | Needs a registered custom URL protocol |
+| History / stats | None | Print log, filament consumption, CSV export |
+| More languages | Chinese + English only | Just add a dictionary in `i18n.py` |
+| Single-file exe | Fails to build on machines with a restricted `%TEMP%` | Use the folder build instead |
+
+### How to contribute
+
+| Task | Where |
+|---|---|
+| Add a printer model | `bambu_monitor/models.py` — add `"code": "Name"` (code comes from `project_name` in `info.get_version`) |
+| Add a language | `bambu_monitor/i18n.py` — the `EN` dict, keys are the Chinese source strings |
+| Add an alert event | `bambu_monitor/state.py` — `Watcher.feed()` |
+| Improve AMS display | `bambu_monitor/ui.py` — `_paint_ams()` / `_ams_card()` |
+
+When filing an issue please include the **printer model + firmware version**, and ideally a status payload
+(`python main.py --diagnose`, or a captured `device/<SN>/report` message).
+
+Even a typo fix is a welcome PR.
 
 ## ⚠️ Disclaimer
 

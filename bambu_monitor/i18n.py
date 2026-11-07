@@ -577,3 +577,15 @@ EN.update({
     "已在浏览器打开项目主页": "Opened the project page in your browser",
     "打不开浏览器，请手动访问项目主页": "Could not open a browser — please visit the project page manually",
 })
+
+
+EN.update({
+    "湿度档位 {n}": "Humidity level {n}",
+    "湿度 —": "Humidity —",
+    "湿度 {humidity}  ·  温度 {temp}°C": "Humidity {humidity}  ·  {temp}°C",
+    "（湿度为固件档位，非百分比）": " (firmware level, not %)",
+    "温度": "Temp",
+    "剩余 {n}%": "{n}% left",
+    "余量未知": "Remaining unknown",
+    "余量未知（非 RFID 卷）": "Remaining unknown (non-RFID spool)",
+})

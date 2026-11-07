@@ -1664,9 +1664,19 @@ class App:
             head.pack(fill="x", pady=(0, 6))
             tk.Label(head, text=f"AMS {int(unit.get('id', 0)) + 1}", bg=PANEL, fg=TEXT,
                      font=(self.ui_font, 9, "bold")).pack(side="left")
-            tk.Label(head, text=tf("湿度 {humidity}  ·  温度 {temp}°C",
-                     humidity=unit.get("humidity", "--"), temp=unit.get("temp", "--")),
+            # 湿度：固件给的是 1~5 档位，不是百分比；温度：A1 mini / AMS Lite 不上报
+            hum_raw = str(unit.get("humidity") or "").strip()
+            hum_text = (t("湿度档位 {n}").format(n=hum_raw)
+                        if hum_raw.isdigit() and hum_raw != "0" else t("湿度 —"))
+            try:
+                temp_val = float(unit.get("temp"))
+            except (TypeError, ValueError):
+                temp_val = 0.0
+            temp_text = f"{temp_val:.0f}°C" if temp_val > 0 else "—"
+            tk.Label(head, text=f"{hum_text}  ·  {t('温度')} {temp_text}",
                      bg=PANEL, fg=MUTED, font=(self.ui_font, 9)).pack(side="left", padx=10)
+            tk.Label(head, text=t("（湿度为固件档位，非百分比）"), bg=PANEL, fg=MUTED,
+                     font=(self.ui_font, 8)).pack(side="left")
 
             grid = tk.Frame(self.ams_frame, bg=PANEL)
             grid.pack(fill="x")
@@ -1703,13 +1713,21 @@ class App:
                  font=(self.ui_font, 9, "bold" if used else "normal"), anchor="w").pack(
             fill="x", padx=(0, 10))
         remain = tray.get("remain")
-        remain_text = tf("剩余 {n}%", n=remain) if isinstance(remain, int) and remain >= 0 else "余量未知"
+        # 非 RFID 卷（tray_uuid 全 0）固件会一直报 100%，不能当真
+        uuid = str(tray.get("tray_uuid") or "")
+        has_rfid = uuid.strip("0") != "" and len(uuid) >= 16
+        if isinstance(remain, int) and remain >= 0 and has_rfid:
+            remain_text = tf("剩余 {n}%", n=remain)
+        elif used and not has_rfid:
+            remain_text = t("余量未知（非 RFID 卷）")
+        else:
+            remain_text = t("余量未知")
         tk.Label(info, text=remain_text, bg=PANEL2, fg=MUTED,
                  font=(self.ui_font, 8), anchor="w").pack(fill="x", padx=(0, 10))
         bar = tk.Canvas(info, height=5, bg=PANEL2, highlightthickness=0)
         bar.pack(fill="x", padx=(0, 10), pady=(3, 0))
 
-        def draw(_evt=None, canvas=bar, val=remain):
+        def draw(_evt=None, canvas=bar, val=(remain if (isinstance(remain, int) and remain >= 0 and has_rfid) else 0)):
             canvas.delete("all")
             w = max(10, canvas.winfo_width())
             canvas.create_rectangle(0, 1, w, 4, fill=LINE, outline="")
