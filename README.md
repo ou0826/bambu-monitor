@@ -13,7 +13,7 @@
 [![Release](https://img.shields.io/github/v/release/ou0826/bambu-monitor?color=orange&label=release)](https://github.com/ou0826/bambu-monitor/releases)
 [![Stars](https://img.shields.io/github/stars/ou0826/bambu-monitor?style=social)](https://github.com/ou0826/bambu-monitor/stargazers)
 
-[下载发布版](https://github.com/ou0826/bambu-monitor/releases) · [快速开始](#-快速开始) · [常见问题](#-常见问题)
+[English](README.en.md) · [下载发布版](https://github.com/ou0826/bambu-monitor/releases) · [快速开始](#-快速开始) · [常见问题](#-常见问题)
 
 </div>
 

@@ -15,6 +15,10 @@ APP_NAME = "BambuMonitor"
 APP_TITLE = "拓竹打印监控"
 
 DEFAULT_CONFIG = {
+    "app": {
+        # 主界面 English 按钮跳转的英文说明地址（可改成你自己的 fork 地址）
+        "readme_en_url": "https://github.com/ou0826/bambu-monitor/blob/main/README.en.md",
+    },
     "printer": {
         "host": "",
         "serial": "",
