@@ -17,6 +17,12 @@ python -m PyInstaller --noconfirm --clean --onedir --windowed ^
   --hidden-import pystray._win32 ^
   --hidden-import PIL.Image ^
   --hidden-import PIL.ImageDraw ^
+  --exclude-module numpy ^
+  --exclude-module matplotlib ^
+  --exclude-module PIL.ImageQt ^
+  --exclude-module PIL.ImageTk ^
+  --exclude-module pystray._gtk ^
+  --exclude-module pystray._xorg ^
   main.py
 if errorlevel 1 goto :err
 
