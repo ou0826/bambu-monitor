@@ -40,8 +40,8 @@ DANGER = "#FF4D4F"
 BLUE = "#4C8DFF"
 LEVEL_COLOR = {SUCCESS: ACCENT, ERROR: DANGER, WARNING: WARN, "info": BLUE}
 
-# 英文 README 的默认在线地址（可在 config 的 app.readme_en_url 覆盖）
-README_EN_URL = "https://github.com/ou0826/bambu-monitor/blob/main/README.en.md"
+# 项目主页（可在 config 的 app.homepage_url 覆盖）
+HOMEPAGE_URL = "https://github.com/ou0826/bambu-monitor"
 
 # 输入里常见的隐形字符（从剪贴板/输入法带进来的），密码里混进去就会登录失败
 _INVISIBLE = "\u200b\u200c\u200d\u2060\ufeff\u00a0\u0000"
@@ -1081,8 +1081,8 @@ class App:
 
         self.btn_settings = self._btn(inner, "设置", self.open_settings)
         self.btn_settings.pack(side="right")
-        self.btn_readme = self._btn(inner, "English", self.open_readme_en)
-        self.btn_readme.pack(side="right", padx=(0, 8))
+        self.btn_home = self._btn(inner, t("主页"), self.open_homepage)
+        self.btn_home.pack(side="right", padx=(0, 8))
         self.btn_connect = self._btn(inner, "连接", self.toggle_connect, primary=True)
         self.btn_connect.pack(side="right", padx=8)
 
@@ -1781,9 +1781,9 @@ class App:
     def open_settings(self) -> None:
         SettingsDialog(self)
 
-    def open_readme_en(self) -> None:
-        """打开英文 README：优先 GitHub 页面，打不开就用程序目录里的本地副本。"""
-        url = self.cfg.get("app", "readme_en_url", "") or README_EN_URL
+    def open_homepage(self) -> None:
+        """打开项目主页；打不开浏览器就用程序目录里的本地说明。"""
+        url = self.cfg.get("app", "homepage_url", "") or HOMEPAGE_URL
         ok = False
         try:
             ok = bool(webbrowser.open(url))
@@ -1794,16 +1794,20 @@ class App:
             if getattr(sys, "frozen", False):
                 bases.append(Path(sys.executable).resolve().parent)
             bases.append(Path(__file__).resolve().parent.parent)
+            names = ["README.en.md", "README.md"] if i18n.is_en() else ["README.md", "README.en.md"]
             for base in bases:
-                local = base / "README.en.md"
-                if local.exists():
-                    try:
-                        ok = bool(webbrowser.open(local.as_uri()))
-                    except Exception:
-                        ok = False
+                for name in names:
+                    local = base / name
+                    if local.exists():
+                        try:
+                            ok = bool(webbrowser.open(local.as_uri()))
+                        except Exception:
+                            ok = False
+                        break
+                if ok:
                     break
-        LOG.info("打开英文 README: %s（成功=%s）", url, ok)
-        self._set_status("已在浏览器打开英文说明（README.en.md）" if ok else "打不开浏览器，请手动访问 README.en.md")
+        LOG.info("打开项目主页: %s（成功=%s）", url, ok)
+        self._set_status(t("已在浏览器打开项目主页") if ok else t("打不开浏览器，请手动访问项目主页"))
 
     def on_config_saved(self) -> None:
         self._set_status("设置已保存")

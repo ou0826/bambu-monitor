@@ -170,7 +170,7 @@ When the printer isn't on your network, the app **opens a login window automatic
 
 The pill in the header shows **transport + online state** (LAN/Cloud · Online/Offline), next to the **model** and **printer address**.
 
-> The interface is **bilingual**: switch language in Settings (the app restarts to apply it). The button in the header toggles between 中文 and English README.
+> The interface is **bilingual**: switch language in Settings (the app restarts to apply it). The **Homepage** button in the header opens this project page; use the language switch at the top of the README to jump between 中文 and English.
 
 ![English UI](docs/screenshot-en.png)
 

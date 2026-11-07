@@ -172,6 +172,8 @@ TLS 连接 ip:8883  →  订阅 device/<序列号>/report  →  解析状态  �
 
 **界面语言**：设置里可以切到 English，切完自动重启生效。英文界面长这样：
 
+> 顶栏的「主页」按钮会打开项目主页（GitHub 仓库），主页首屏有 [English](README.en.md) 链接可切到英文说明。
+
 ![English UI](docs/screenshot-en.png)
 
 ---

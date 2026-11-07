@@ -571,3 +571,9 @@ EN.update({
         'Tip: with "Start with Windows" + "Start minimised" the app waits in the '
         "background and pops up when you open Bambu Studio.",
 })
+
+EN.update({
+    "主页": "Homepage",
+    "已在浏览器打开项目主页": "Opened the project page in your browser",
+    "打不开浏览器，请手动访问项目主页": "Could not open a browser — please visit the project page manually",
+})
