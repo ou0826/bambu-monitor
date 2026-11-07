@@ -23,5 +23,9 @@ Thumbs.db
 .vscode/
 *.swp
 
-# ·ÖÏí°ü£¨¶ş½øÖÆ£¬·Å GitHub Releases£©
+# åˆ†äº«åŒ…ï¼ˆä¸è¿› GitHubï¼‰
 *.zip
+
+# å¼€å‘æ–‡æ¡£åªæ”¾æœ¬åœ°ï¼Œä¸è¿›ä»“åº“
+docs/DEVELOPMENT.md
+docs/FEATURES.md
