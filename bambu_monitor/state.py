@@ -9,6 +9,8 @@ import copy
 import time
 from dataclasses import dataclass, field
 
+from .i18n import t, tf
+
 # 事件级别
 SUCCESS = "success"
 ERROR = "error"
@@ -259,8 +261,10 @@ def _remaining_text(minutes) -> str:
     if m <= 0:
         return ""
     if m >= 60:
-        return f"约 {m // 60} 小时 {m % 60} 分" if m % 60 else f"约 {m // 60} 小时"
-    return f"约 {m} 分钟"
+        if m % 60:
+            return tf("约 {h} 小时 {mm} 分", h=m // 60, mm=m % 60)
+        return tf("约 {h} 小时", h=m // 60)
+    return tf("约 {m} 分钟", m=m)
 
 
 def hms_code_text(item: dict) -> str:
@@ -343,13 +347,13 @@ class Watcher:
             ams_main = (ams_status >> 8) & 0xFF
             ams_sub = ams_status & 0xFF
         hms = p.get("hms") or []
-        stage_text = STAGE_ZH.get(stg, f"阶段 {stg}") if isinstance(stg, int) else ""
+        stage_text = t(STAGE_ZH.get(stg, f"阶段 {stg}")) if isinstance(stg, int) else ""
         if gs == "RUNNING" and stage_text in ("空闲",):
             stage_text = "打印中"
         return {
             "online": self.online,
             "gcode_state": gs,
-            "state_text": GCODE_STATE_ZH.get(gs, gs or "未知"),
+            "state_text": t(GCODE_STATE_ZH.get(gs, gs or "未知")),
             "stage_text": stage_text,
             "percent": p.get("mc_percent"),
             "remaining": p.get("mc_remaining_time"),
@@ -419,8 +423,8 @@ class Watcher:
                     Event(
                         "cancel",
                         INFO,
-                        "打印已取消",
-                        f"「{self._job_name(p)}」已被取消",
+                        t("打印已取消"),
+                        tf("「{name}」已被取消", name=self._job_name(p)),
                         sound="attention",
                     )
                 )
@@ -429,8 +433,8 @@ class Watcher:
                     Event(
                         "fail",
                         ERROR,
-                        "打印异常停止",
-                        f"打印机上报错误码 0x{err:X}（{err}），请在打印机屏幕上确认原因",
+                        t("打印异常停止"),
+                        tf("打印机上报错误码 0x{code:X}（{code}），请在打印机屏幕上确认原因", code=err),
                         need_action=True,
                         sound="error",
                         detail={"print_error": err},
@@ -453,8 +457,8 @@ class Watcher:
             main = (ams_status >> 8) & 0xFF
             sub = ams_status & 0xFF
             if main == 0x01 and ams_status != self._last_ams_status:
-                step = AMS_STEP_ZH.get(sub, "")
-                body = "AMS 正在自动换料" + (f"：{step}" if step else "")
+                step = t(AMS_STEP_ZH.get(sub, ""))
+                body = t("AMS 正在自动换料") + (tf("：{step}", step=step) if step else "")
                 events.append(
                     Event("filament", INFO, "正在换料", body, sound="attention")
                 )
@@ -470,7 +474,7 @@ class Watcher:
                     Event(
                         "pause",
                         WARNING,
-                        f"暂停原因变化：{reason}",
+                        tf("暂停原因变化：{reason}", reason=reason),
                         advice,
                         need_action=True,
                         sound="attention",
@@ -495,15 +499,15 @@ class Watcher:
             key = f"{p.get('task_id')}:{p.get('subtask_id')}:{name}"
             if key != self._last_finish_key:
                 self._last_finish_key = key
-                body = f"「{name}」打印完成"
+                body = tf("「{name}」打印完成", name=name)
                 if remain:
-                    body += f"，剩余时间 {remain}"
+                    body += tf("，剩余时间 {remain}", remain=remain)
                 events.append(
                     Event(
                         "finish",
                         SUCCESS,
-                        "打印完成 🎉",
-                        body + "。可以取件了",
+                        t("打印完成 🎉"),
+                        body + t("。可以取件了"),
                         sound="finish",
                         detail={"file": name},
                     )
@@ -513,8 +517,8 @@ class Watcher:
                 Event(
                     "fail",
                     ERROR,
-                    "打印失败",
-                    f"「{name}」打印失败，请在打印机屏幕或 Bambu Studio 查看原因",
+                    t("打印失败"),
+                    tf("「{name}」打印失败，请在打印机屏幕或 Bambu Studio 查看原因", name=name),
                     need_action=True,
                     sound="error",
                 )
@@ -527,12 +531,12 @@ class Watcher:
             hms = p.get("hms") or []
             if not reason and hms:
                 item = hms[0]
-                reason = f"{hms_module(item)}提示"
-                advice = HMS_ADVICE.get(hms_module(item), "请在打印机屏幕上查看提示")
-            title = "打印已暂停" + (f"：{reason}" if reason else "")
-            body = advice or "请在打印机或 Bambu Studio 中确认后继续"
+                reason = tf("{module}提示", module=t(hms_module(item)))
+                advice = t(HMS_ADVICE.get(hms_module(item), "请在打印机屏幕上查看提示"))
+            title = tf("打印已暂停：{reason}", reason=reason) if reason else t("打印已暂停")
+            body = advice or t("请在打印机或 Bambu Studio 中确认后继续")
             if pct not in (None, ""):
-                body += f"（已打印 {pct}%）"
+                body += tf("（已打印 {pct}%）", pct=pct)
             events.append(
                 Event(
                     "pause",
@@ -546,7 +550,7 @@ class Watcher:
             )
         elif gs == "RUNNING" and prev_gs in ("PAUSE",):
             events.append(
-                Event("resume", INFO, "打印已恢复", f"「{name}」继续打印中", sound="")
+                Event("resume", INFO, t("打印已恢复"), tf("「{name}」继续打印中", name=name), sound="")
             )
         elif gs == "RUNNING" and prev_gs in ("IDLE", "FINISH", "FAILED", "PREPARE", ""):
             self.new_job()
@@ -554,8 +558,8 @@ class Watcher:
                 Event(
                     "start",
                     INFO,
-                    "开始打印",
-                    f"「{name}」开始打印",
+                    t("开始打印"),
+                    tf("「{name}」开始打印", name=name),
                     sound="",
                     detail={"file": name},
                 )
@@ -566,20 +570,20 @@ class Watcher:
         module = hms_module(first)
         sev = hms_severity(first)
         code = hms_code_text(first)
-        more = "" if len(fresh) == 1 else f" 等 {len(fresh)} 项"
+        more = "" if len(fresh) == 1 else tf(" 等 {n} 项", n=len(fresh))
         # 严重度：1 致命 / 2 严重 / 3 一般 / 4 提示
         if sev in (1, 2):
-            level, title, act = ERROR, "打印机故障", True
+            level, title_tmpl, act = ERROR, "打印机故障：{module}", True
         elif sev == 3:
-            level, title, act = WARNING, "打印机告警", True
+            level, title_tmpl, act = WARNING, "打印机告警：{module}", True
         else:
-            level, title, act = INFO, "打印机提示", False
-        advice = HMS_ADVICE.get(module, "请在打印机屏幕上查看提示")
+            level, title_tmpl, act = INFO, "打印机提示：{module}", False
+        advice = t(HMS_ADVICE.get(module, "请在打印机屏幕上查看提示"))
         return Event(
             "hms",
             level,
-            f"{title}：{module}",
-            f"HMS {code}{more}。{advice}",
+            tf(title_tmpl, module=t(module)),
+            tf("HMS {code}{more}。{advice}", code=code, more=more, advice=advice),
             need_action=act,
             sound="error" if level == ERROR else "attention",
             detail={"codes": [hms_code_text(i) for i in fresh], "module": module, "severity": sev},
@@ -590,6 +594,6 @@ def AmsText(main, sub) -> str:
     if main is None:
         return ""
     if main == 0x01:
-        step = AMS_STEP_ZH.get(sub, "")
-        return "换料中" + (f"·{step}" if step else "")
-    return AMS_MAIN_ZH.get(main, "未知")
+        step = t(AMS_STEP_ZH.get(sub, ""))
+        return t("换料中") + (f"·{step}" if step else "")
+    return t(AMS_MAIN_ZH.get(main, "未知"))

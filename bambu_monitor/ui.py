@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from tkinter import messagebox, ttk
 
 from . import __version__, autostart, cloud as cloud_mod, discovery, models
+from . import i18n
+from .i18n import t, tf
 from .config import APP_TITLE, Config
 from .mqtt_client import PrinterClient, probe
 from .notify import Notifier
@@ -129,10 +131,10 @@ class AlertPopup(tk.Toplevel):
 
         head = tk.Frame(body, bg=PANEL)
         head.pack(fill="x", padx=16, pady=(14, 0))
-        tk.Label(head, text=f"  {ev.title}", bg=PANEL, fg=color,
+        tk.Label(head, text=f"  {t(ev.title)}", bg=PANEL, fg=color,
                  font=(app.ui_font, 12, "bold"), anchor="w").pack(side="left")
 
-        msg = tk.Label(body, text=ev.body, bg=PANEL, fg=TEXT, font=(app.ui_font, 10),
+        msg = tk.Label(body, text=t(ev.body), bg=PANEL, fg=TEXT, font=(app.ui_font, 10),
                        wraplength=350, justify="left", anchor="w")
         msg.pack(fill="x", padx=16, pady=(6, 4))
 
@@ -172,7 +174,7 @@ class AlertPopup(tk.Toplevel):
     def _tick(self) -> None:
         if not self.winfo_exists():
             return
-        self.tip.configure(text=f"{self._left} 秒后自动关闭 · 点击打开面板")
+        self.tip.configure(text=tf("{n} 秒后自动关闭 · 点击打开面板", n=self._left))
         if self._left <= 0:
             self.close()
             return
@@ -301,6 +303,17 @@ class SettingsDialog(tk.Toplevel):
         self.scan_box.pack(fill="x", pady=(8, 0), **pad)
         self.scan_box.bind("<<ListboxSelect>>", self._pick_found)
 
+        # ---- 界面语言 ----
+        lang_row = tk.Frame(self, bg=BG)
+        lang_row.pack(fill="x", pady=(0, 6), **pad)
+        self._label(lang_row, "界面语言").pack(side="left")
+        lang_var = tk.StringVar(value="English" if i18n.is_en() else "中文")
+        self._vars["language"] = lang_var
+        ttk.Combobox(lang_row, textvariable=lang_var, state="readonly", width=10,
+                     values=["中文", "English"]).pack(side="left", padx=(10, 10))
+        tk.Label(lang_row, text="（切换后需重启程序生效）", bg=BG, fg=MUTED,
+                 font=(self.f, 9)).pack(side="left")
+
         tk.Frame(self, bg=LINE, height=1).pack(fill="x", pady=12, **pad)
 
         # ---- 跨网络（云端）----
@@ -405,7 +418,7 @@ class SettingsDialog(tk.Toplevel):
                 found = discovery.discover(timeout=0.5)
             except Exception as e:
                 found = []
-                self.q.put(("say", f"扫描失败：{e}", DANGER))
+                self.q.put(("say", tf("扫描失败：{msg}", msg=e), DANGER))
             self.q.put(("scan_done", found))
 
         threading.Thread(target=work, daemon=True).start()
@@ -420,10 +433,10 @@ class SettingsDialog(tk.Toplevel):
             code = codes.get(item["serial"], "")
             self.scan_box.insert(
                 tk.END,
-                f"{item['host']}   序列号 {item['serial'] or '未知'}"
-                f"{'   （已有访问码）' if code else ''}",
+                tf("{host}   序列号 {serial}", host=item["host"], serial=item["serial"] or "未知")
+                + (t("   （已有访问码）") if code else ""),
             )
-        self._say(f"发现 {len(found)} 台，点击选择即可填入。", ACCENT)
+        self._say(tf("发现 {n} 台，点击选择即可填入。", n=len(found)), ACCENT)
         self.scan_box.selection_set(0)
         self._pick_found()
 
@@ -449,7 +462,7 @@ class SettingsDialog(tk.Toplevel):
         serial = self._vars["serial"].get().strip()
         if serial in codes:
             self._vars["access_code"].set(codes[serial])
-            self._say(f"已填入序列号 {serial} 的访问码。", ACCENT)
+            self._say(tf("已填入序列号 {serial} 的访问码。", serial=serial), ACCENT)
         else:
             self._say("找到 %d 个访问码，但没有匹配当前序列号的，可先自动搜索。" % len(codes), WARN)
 
@@ -464,8 +477,8 @@ class SettingsDialog(tk.Toplevel):
             acc = c.get("account") or "（已保存登录凭证）"
             dev = c.get("name") or c.get("serial", "")
             model = models.normalize(c.get("model")) or ""
-            tail = f"｜设备 {dev}" + (f"（{model}）" if model else "")
-            return f"状态：已登录 {acc}{tail}"
+            tail = tf("｜设备 {dev}", dev=dev) + (f"（{model}）" if model else "")
+            return tf("状态：已登录 {acc}{tail}", acc=acc, tail=tail)
         return "状态：未登录。点“登录 / 更换账号”，填邮箱 → 发送验证码 → 填入邮件里的 6 位数字。"
 
     def _test_conn(self) -> None:
@@ -488,12 +501,12 @@ class SettingsDialog(tk.Toplevel):
                 msg = str(e)
                 try:
                     if discovery.same_subnet(host) is False:
-                        msg += (f"。原因：打印机 {host} 与本机（{discovery.local_networks_text()}）"
-                                f"不在同一网络，本程序走局域网直连，跨网络连不上。"
-                                f"把打印机连到同一个 WiFi 即可。")
+                        msg += (tf("。原因：打印机 {host} 与本机（{nets}）不在同一网络，"
+                                   "本程序走局域网直连，跨网络连不上。把打印机连到同一个 WiFi 即可。",
+                                   host=host, nets=discovery.local_networks_text()))
                 except Exception:
                     pass
-                self.q.put(("say", f"连接失败：{msg}", DANGER))
+                self.q.put(("say", tf("连接失败：{msg}", msg=msg), DANGER))
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -509,6 +522,15 @@ class SettingsDialog(tk.Toplevel):
             self._say("请填打印机 IP；如果改用云端，勾上“通过拓竹云连接”。", WARN)
             return
         self.cfg.printer.update({"host": host, "serial": serial, "access_code": code})
+        # 语言
+        lang_changed = False
+        if "language" in self._vars:
+            picked = str(self._vars.pop("language").get())
+            new_lang = "en" if picked.strip().lower().startswith("english") else "zh"
+            old_lang = str(self.cfg.get("app", "language", "zh") or "zh")
+            if new_lang != old_lang:
+                self.cfg.set("app", "language", new_lang, save=False)
+                lang_changed = True
         # 云端开关
         if "cloud_enabled" in self._vars:
             self.cfg.cloud["enabled"] = bool(self._vars.pop("cloud_enabled").get())
@@ -532,6 +554,8 @@ class SettingsDialog(tk.Toplevel):
         autostart.set_enabled(bool(self.cfg.behavior.get("autostart")))
         self.app.on_config_saved()
         self.destroy()
+        if lang_changed:
+            self.app.prompt_restart_for_language()
 
 
 # --------------------------------------------------------------------------
@@ -704,7 +728,7 @@ class CloudLoginDialog(tk.Toplevel):
             except Exception as exc:
                 msg = str(exc)
                 LOG.warning("发送验证码失败: %s", msg)
-                self.q.put(("say", f"发送失败：{msg}", DANGER))
+                self.q.put(("say", tf("发送失败：{msg}", msg=msg), DANGER))
                 self.q.put(("btn_ok", None))
 
         threading.Thread(target=work, daemon=True).start()
@@ -744,7 +768,7 @@ class CloudLoginDialog(tk.Toplevel):
             try:
                 devices = api.devices()
             except Exception as exc:
-                msg = f"登录成功，但取不到设备列表：{exc}"
+                msg = tf("登录成功，但取不到设备列表：{exc}", exc=exc)
                 LOG.warning(msg)
                 self.q.put(("fail", msg))
                 return
@@ -798,7 +822,9 @@ class CloudLoginDialog(tk.Toplevel):
         if pick.get("model") and not models.normalize(self.cfg.printer.get("model")):
             self.cfg.printer["model"] = models.normalize(pick["model"]) or self.cfg.printer.get("model", "")
         self.cfg.save()
-        self._say(f"登录成功：{pick.get('name') or pick['dev_id']}（{pick.get('model') or '未知机型'}）", ACCENT)
+        self._say(tf("登录成功：{name}（{model}）",
+                              name=pick.get("name") or pick["dev_id"],
+                              model=pick.get("model") or "未知机型"), ACCENT)
         self.app.on_cloud_logged_in()
         self.after(600, self._close)
 
@@ -827,7 +853,7 @@ class App:
 
         self.root = tk.Tk()
         self.ui_font = pick_font()
-        self.root.title(APP_TITLE)
+        self.root.title(t(APP_TITLE))
         self.root.configure(bg=BG)
         self.root.minsize(920, 660)
         self.root.option_add("*Font", (self.ui_font, 10))
@@ -859,8 +885,90 @@ class App:
         if self.cfg.behavior.get("auto_connect") and self.cfg.has_printer():
             self.root.after(600, self.connect)
 
+        # 系统托盘（缺 pystray/Pillow 时自动降级为最小化到任务栏）
+        self._tray = None
+        self.root.after(300, self._init_tray)
+
         # 跟随 Bambu Studio：它开着就自动出现在前台
         self.root.after(900, self._poll_bambu)
+
+
+    # ---------------- 系统托盘 ----------------
+    def _init_tray(self) -> None:
+        """启动托盘图标；没有 pystray/Pillow 时静默降级为最小化到任务栏。"""
+        try:
+            import pystray
+            from PIL import Image as PILImage
+        except Exception as e:  # 依赖缺失不影响主功能
+            LOG.info("托盘不可用（缺少 pystray/Pillow）：%s", e)
+            return
+
+        bases = [Path(sys.executable).resolve().parent] if getattr(sys, "frozen", False) else []
+        bases.append(Path(__file__).resolve().parent.parent)
+        image = None
+        for base in bases:
+            ico = base / "assets" / "app.ico"
+            if ico.exists():
+                try:
+                    image = PILImage.open(ico)
+                    break
+                except Exception:
+                    image = None
+        if image is None:
+            image = PILImage.new("RGB", (64, 64), (23, 26, 33))
+
+        menu = pystray.Menu(
+            pystray.MenuItem(t("打开面板"), lambda: self.q.put(("show", None)), default=True),
+            pystray.MenuItem(t("显示主窗口"), lambda: self.q.put(("show", None))),
+            pystray.MenuItem(t("暂停"), lambda: self.q.put(("tray_pause", None))),
+            pystray.MenuItem(t("继续"), lambda: self.q.put(("tray_resume", None))),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem(t("退出程序"), lambda: self.q.put(("quit", None))),
+        )
+        try:
+            self._tray = pystray.Icon("bambumonitor", image, t("拓竹打印监控"), menu)
+            self._tray.run_detached()
+            LOG.info("托盘图标已启动")
+        except Exception as e:
+            LOG.warning("托盘启动失败，降级为任务栏：%s", e)
+            self._tray = None
+
+    def _update_tray_title(self) -> None:
+        """托盘悬浮提示显示当前状态。"""
+        if self._tray is None:
+            return
+        try:
+            s = self.watcher.summary()
+            bits = [t("拓竹打印监控")]
+            if s.get("state_text"):
+                bits.append(t(s["state_text"]))
+            if isinstance(s.get("percent"), int) and s["gcode_state"] == "RUNNING":
+                bits.append(f"{s['percent']}%")
+            self._tray.title = " · ".join(bits)
+        except Exception:
+            pass
+
+    def prompt_restart_for_language(self) -> None:
+        """切换语言后询问是否立即重启。"""
+        if not messagebox.askyesno(t("界面语言"), t("已切换界面语言，需要重启程序生效。现在重启吗？")):
+            self._set_status(t("语言已保存，下次启动生效"))
+            return
+        self._restart_app()
+
+    def _restart_app(self) -> None:
+        try:
+            self._on_close(force=True)
+        except Exception:
+            pass
+        try:
+            import os
+
+            if getattr(sys, "frozen", False):
+                os.execv(sys.executable, [sys.executable] + sys.argv[1:])
+            else:
+                os.execv(sys.executable, [sys.executable] + sys.argv)
+        except Exception as e:
+            LOG.warning("自动重启失败: %s", e)
 
     # ---------------- 跟随 Bambu Studio ----------------
     def _poll_bambu(self) -> None:
@@ -1132,7 +1240,7 @@ class App:
         if not username:
             self._set_status("云端凭证缺少 uid，请重新登录")
             return
-        self._set_status(f"正在通过拓竹云连接 {c.get('name') or c.get('serial')} ...")
+        self._set_status(tf("正在通过拓竹云连接 {name} ...", name=c.get("name") or c.get("serial")))
         self.client = PrinterClient(
             host=host,
             serial=c.get("serial", ""),
@@ -1165,7 +1273,7 @@ class App:
             return
         self.disconnect()
         self.watcher.reset()
-        self._set_status(f"正在连接 {host} ...")
+        self._set_status(tf("正在连接 {host} ...", host=host))
         self.client = PrinterClient(
             host=host,
             serial=serial,
@@ -1235,12 +1343,21 @@ class App:
                         self.root.after(max(10, secs) * 1000, self._check_offline)
                 elif kind == "info":
                     self._on_info(payload)
+                elif kind == "show":
+                    self.show_window()
+                elif kind == "tray_pause":
+                    self._cmd("pause")
+                elif kind == "tray_resume":
+                    self._cmd("resume")
+                elif kind == "quit":
+                    self._on_close(force=True)
                 elif kind == "status":
                     text = str(payload)
                     if text.startswith("连接失败"):
                         hint = self._offline_hint()
                         if self.use_cloud():
-                            hint = f"云端连接失败（{self.cfg.cloud.get('serial', '')}），可能是登录已过期，请重新登录"
+                            hint = tf("云端连接失败（{serial}），可能是登录已过期，请重新登录",
+                                           serial=self.cfg.cloud.get("serial", ""))
                         if hint:
                             text = f"{text}｜{hint}"
                             if not getattr(self, "_hinted_offline", False):
@@ -1275,7 +1392,7 @@ class App:
         if model != self._detected_model:
             self._detected_model = model
             LOG.info("识别到机型: %s", model)
-            self._log(Event("model", SUCCESS, f"识别到机型：{model}", ""))
+            self._log(Event("model", SUCCESS, tf("识别到机型：{model}", model=model), ""))
         if self.cfg.printer.get("model_detected") != model:
             self.cfg.printer["model_detected"] = model
             self.cfg.save()
@@ -1315,8 +1432,8 @@ class App:
         name = c.get("name") or c.get("serial")
         LOG.info("已登录拓竹账号，云端设备 %s", c.get("serial"))
         self._log(Event("cloud", SUCCESS, "已登录拓竹账号",
-                        f"将通过拓竹云监控 {name}"))
-        self._set_status(f"已登录，正在通过云端连接 {name} ...")
+                        tf("将通过拓竹云监控 {name}", name=name)))
+        self._set_status(tf("已登录，正在通过云端连接 {name} ...", name=name))
         self._detected_model = models.normalize(c.get("model")) or self._detected_model
         self._last_ams_sig = ""
         try:
@@ -1330,7 +1447,7 @@ class App:
         if self.use_cloud():
             c = self.cfg.cloud
             name = c.get("name") or c.get("serial", "")
-            return f"{name}（拓竹云）" if name else "拓竹云"
+            return tf("{name}（拓竹云）", name=name) if name else "拓竹云"
         return self.cfg.printer.get("host", "")
 
     def _offline_hint(self) -> str:
@@ -1343,8 +1460,8 @@ class App:
         except Exception:
             same = None
         if same is False:
-            return (f"跨网段：打印机 {host} 不在本机网络（本机 {discovery.local_networks_text()}），"
-                    f"局域网直连不可达")
+            return (tf("跨网段：打印机 {host} 不在本机网络（本机 {nets}），局域网直连不可达",
+                    host=host, nets=discovery.local_networks_text()))
         return ""
 
     def _check_offline(self) -> None:
@@ -1358,9 +1475,10 @@ class App:
             Event(
                 "offline",
                 WARNING,
-                "打印机失联",
-                f"已经 {secs} 秒连不上 {self.cfg.printer.get('host', '打印机')}，"
-                "请检查电源、WiFi 或打印是否被中断",
+                t("打印机失联"),
+                tf("已经 {secs} 秒连不上 {host}，", secs=secs,
+                   host=self.cfg.printer.get("host", t("打印机")))
+                + t("请检查电源、WiFi 或打印是否被中断"),
                 need_action=True,
                 sound="error",
             )
@@ -1410,7 +1528,7 @@ class App:
 
     def _footer(self) -> str:
         p = self.cfg.printer
-        return f"{p.get('name') or '打印机'} · {p.get('host', '')}"
+        return f"{p.get('name') or t('打印机')} · {p.get('host', '')}"
 
     # ---------------- 渲染 ----------------
     def _paint(self) -> None:
@@ -1423,15 +1541,15 @@ class App:
 
         # 顶栏：连接方式 + 在线状态
         if self.use_cloud():
-            mode = "云端"
+            mode = t("云端")
         elif self.cfg.printer.get("host"):
-            mode = "局域网"
+            mode = t("局域网")
         else:
-            mode = "未配置"
+            mode = t("未配置")
         if self._connected:
-            self.conn_badge.configure(text=f"{mode} · 在线", fg=ACCENT)
+            self.conn_badge.configure(text=f"{mode} · {t('在线')}", fg=ACCENT)
         else:
-            self.conn_badge.configure(text=f"{mode} · 离线", fg=MUTED)
+            self.conn_badge.configure(text=f"{mode} · {t('离线')}", fg=MUTED)
 
         self.stage_label.configure(text=s["stage_text"] or "")
         name = s["file"] or "（未在打印）"
@@ -1455,7 +1573,7 @@ class App:
             self._job_started = None
         if self._job_started:
             el = int(time.time() - self._job_started)
-            self.elapsed_label.configure(text=f"已用 {el // 3600}:{el % 3600 // 60:02d}:{el % 60:02d}")
+            self.elapsed_label.configure(text=tf("已用 {h}:{m:02d}:{s:02d}", h=el // 3600, m=el % 3600 // 60, s=el % 60))
         else:
             self.elapsed_label.configure(text="")
 
@@ -1497,6 +1615,7 @@ class App:
         else:
             self.printer_label.configure(text="未配置打印机，请点「设置」")
         self._refresh_buttons(gs)
+        self._update_tray_title()
 
     def _draw_temp_bar(self, key: str, cur, target) -> None:
         c = self.temp_bars.get(key)
@@ -1545,7 +1664,8 @@ class App:
             head.pack(fill="x", pady=(0, 6))
             tk.Label(head, text=f"AMS {int(unit.get('id', 0)) + 1}", bg=PANEL, fg=TEXT,
                      font=(self.ui_font, 9, "bold")).pack(side="left")
-            tk.Label(head, text=f"湿度 {unit.get('humidity', '--')}  ·  温度 {unit.get('temp', '--')}°C",
+            tk.Label(head, text=tf("湿度 {humidity}  ·  温度 {temp}°C",
+                     humidity=unit.get("humidity", "--"), temp=unit.get("temp", "--")),
                      bg=PANEL, fg=MUTED, font=(self.ui_font, 9)).pack(side="left", padx=10)
 
             grid = tk.Frame(self.ams_frame, bg=PANEL)
@@ -1576,14 +1696,14 @@ class App:
         info.pack(side="left", fill="both", expand=True, pady=8)
         material = tray.get("tray_type") or "空槽"
         sub = tray.get("tray_sub_brands") or ""
-        title = f"槽位 {index + 1} · {material}"
+        title = tf("槽位 {n} · {material}", n=index + 1, material=material)
         if sub and sub not in material:
             title += f" {sub}"
         tk.Label(info, text=title, bg=PANEL2, fg=TEXT if used else MUTED,
                  font=(self.ui_font, 9, "bold" if used else "normal"), anchor="w").pack(
             fill="x", padx=(0, 10))
         remain = tray.get("remain")
-        remain_text = f"剩余 {remain}%" if isinstance(remain, int) and remain >= 0 else "余量未知"
+        remain_text = tf("剩余 {n}%", n=remain) if isinstance(remain, int) and remain >= 0 else "余量未知"
         tk.Label(info, text=remain_text, bg=PANEL2, fg=MUTED,
                  font=(self.ui_font, 8), anchor="w").pack(fill="x", padx=(0, 10))
         bar = tk.Canvas(info, height=5, bg=PANEL2, highlightthickness=0)
@@ -1639,9 +1759,9 @@ class App:
         stamp = time.strftime("%H:%M:%S", time.localtime(ev.ts))
         self.log.configure(state="normal")
         self.log.insert("end", f"[{stamp}] ", "time")
-        self.log.insert("end", f"{ev.title}", ev.level if ev.level in LEVEL_COLOR else "info")
+        self.log.insert("end", f"{t(ev.title)}", ev.level if ev.level in LEVEL_COLOR else "info")
         if ev.body:
-            self.log.insert("end", f"  {ev.body}\n", "info")
+            self.log.insert("end", f"  {t(ev.body)}\n", "info")
         else:
             self.log.insert("end", "\n", "info")
         # 只保留最近 400 行，避免长时间运行后越来越慢
@@ -1738,7 +1858,16 @@ class App:
             self.root.after(int(delay * 1000), lambda e=ev: self._handle_event(e))
 
     def _on_close(self, force: bool = False) -> None:
-        # 默认：点 X 只是缩到任务栏，进程继续在后台盯着打印机
+        # 有托盘时：点 X 收进托盘
+        if not force and self._tray is not None and not self.cfg.behavior.get("exit_on_close", False):
+            try:
+                self.root.withdraw()
+            except tk.TclError:
+                pass
+            self._set_status(t("已缩到托盘，仍在后台监控（右键托盘图标可打开或退出）"))
+            LOG.info("窗口已隐藏到托盘")
+            return
+        # 没有托盘时：缩到任务栏
         if not force and not self.cfg.behavior.get("exit_on_close", False):
             try:
                 self.root.iconify()
@@ -1753,6 +1882,12 @@ class App:
         except Exception:
             pass
         self.disconnect()
+        if self._tray is not None:
+            try:
+                self._tray.stop()
+            except Exception:
+                pass
+            self._tray = None
         try:
             self.root.destroy()
         except tk.TclError:

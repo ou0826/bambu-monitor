@@ -9,6 +9,8 @@ import time
 
 import paho.mqtt.client as mqtt
 
+from .i18n import t, tf
+
 LOG = logging.getLogger(__name__)
 
 MQTT_PORT = 8883
@@ -127,7 +129,7 @@ class PrinterClient:
         client.on_message = self._on_message
         self._client = client
 
-        self._status(f"正在连接 {self.host}:{self.port} ...")
+        self._status(tf("正在连接 {host}:{port} ...", host=self.host, port=self.port))
         try:
             client.connect_async(self.host, self.port, keepalive=60)
             client.loop_forever(retry_first_connection=True)
@@ -142,12 +144,12 @@ class PrinterClient:
 
     def _on_connect(self, client, userdata, flags, reason_code, properties=None):
         if getattr(reason_code, "value", reason_code) != 0:
-            self._status(f"连接失败：{reason_code}（多半是访问码不对）")
+            self._status(tf("连接失败：{reason_code}（多半是访问码不对）", reason_code=reason_code))
             return
         self._connected.set()
         topic = f"device/{self.serial}/report"
         client.subscribe(topic, qos=0)
-        self._status(f"已连接 {self.host}")
+        self._status(tf("已连接 {host}", host=self.host))
         self.request_pushall()
         # 顺便问一下机型（info.get_version 的响应里有 project_name）
         self.get_version()
@@ -163,11 +165,11 @@ class PrinterClient:
         if now - getattr(self, "_last_fail_report", 0) < 60:
             return
         self._last_fail_report = now
-        self._status(f"连接失败 {self.host}:{self.port}")
+        self._status(tf("连接失败 {host}:{port}", host=self.host, port=self.port))
 
     def _on_disconnect(self, client, userdata, flags, reason_code, properties=None):
         self._connected.clear()
-        self._status("与打印机的连接已断开")
+        self._status(t("与打印机的连接已断开"))
         if self.on_disconnected:
             try:
                 self.on_disconnected()

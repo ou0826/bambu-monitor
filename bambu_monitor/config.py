@@ -18,6 +18,8 @@ DEFAULT_CONFIG = {
     "app": {
         # 主界面 English 按钮跳转的英文说明地址（可改成你自己的 fork 地址）
         "readme_en_url": "https://github.com/ou0826/bambu-monitor/blob/main/README.en.md",
+        # 界面语言：zh / en
+        "language": "zh",
     },
     "printer": {
         "host": "",

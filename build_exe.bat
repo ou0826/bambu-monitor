@@ -13,6 +13,10 @@ python -m PyInstaller --noconfirm --clean --onedir --windowed ^
   --icon "assets\app.ico" ^
   --add-data "assets;assets" ^
   --hidden-import paho.mqtt.client ^
+  --hidden-import pystray ^
+  --hidden-import pystray._win32 ^
+  --hidden-import PIL.Image ^
+  --hidden-import PIL.ImageDraw ^
   main.py
 if errorlevel 1 goto :err
 

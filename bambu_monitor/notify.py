@@ -21,6 +21,7 @@ import wave
 from pathlib import Path
 
 from .config import app_dir, sound_dir
+from .i18n import t
 
 LOG = logging.getLogger(__name__)
 
@@ -155,7 +156,7 @@ class Notifier:
         if not self.cfg.get("notify", "toast", True):
             return
         if sys.platform != "win32":
-            print(f"[通知] {title} - {body}")
+            print(f"[notify] {title} - {body}")
             return
         payload = {
             "title": title,
@@ -226,5 +227,5 @@ class Notifier:
 
     def notify(self, title: str, body: str, level: str = "info", sound: str = "", footer: str = "") -> None:
         """发一条通知：系统 Toast + 提示音。弹窗由 UI 层负责。"""
-        self.toast(title, body, footer=footer)
+        self.toast(t(title), t(body), footer=footer)
         self.play(sound or ("error" if level == "error" else ""))

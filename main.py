@@ -18,6 +18,7 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from bambu_monitor import __version__
+from bambu_monitor import i18n
 from bambu_monitor.config import APP_TITLE, Config, log_dir
 from bambu_monitor.notify import Notifier
 from bambu_monitor.ui import App
@@ -112,6 +113,8 @@ def main(argv=None) -> int:
     LOG.info("启动 %s v%s", APP_TITLE, __version__)
 
     cfg = Config()
+    i18n.set_language(cfg.get("app", "language", "zh"))
+    i18n.install_tk_patches()
     notifier = Notifier(cfg)
 
     if args.test_notify:

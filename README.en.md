@@ -45,7 +45,9 @@ And it stays out of your way: toasts go to the Action Center, and only important
 | 🔔 | **Event alerts** | Finished / failed / paused / filament change / HMS error / offline — each toggleable |
 | 🔊 | **Three channels** | Windows toast (Action Center) + topmost popup + synthesised chime |
 | 🏷️ | **Model detection** | A1 mini / A1 / P1P / P1S / P2S / X1 / X1 Carbon / X1E / H2D series |
-| 🪟 | **Follows Bambu Studio** | Pops up and connects when you launch Bambu Studio; minimises when you close it (optional) |
+| 🪟 | **Follows Bambu Studio** | Pops up and connects when you launch Bambu Studio; hides when you close it (optional) |
+| 🧭 | **System tray** | Closing the window hides it to the tray; right-click to open / pause / resume / quit |
+| 🌐 | **Bilingual UI** | Switch between 中文 and English in Settings (restarts automatically) |
 | 🔀 | **Two transports** | Direct LAN (fastest) or Bambu Cloud relay (cross-network) |
 | 🎮 | **Remote control** | Pause / resume / stop from the panel (stop asks for confirmation) |
 | 🔒 | **Local first** | LAN mode never leaves your network; cloud mode stores a token, never your password |
@@ -168,7 +170,9 @@ When the printer isn't on your network, the app **opens a login window automatic
 
 The pill in the header shows **transport + online state** (LAN/Cloud · Online/Offline), next to the **model** and **printer address**.
 
-> The UI is in Chinese. An English README is linked from the **English** button in the app; the interface itself may be localised in a future release.
+> The interface is **bilingual**: switch language in Settings (the app restarts to apply it). The button in the header toggles between 中文 and English README.
+
+![English UI](docs/screenshot-en.png)
 
 ---
 
