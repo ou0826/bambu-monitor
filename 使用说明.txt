@@ -60,7 +60,17 @@
     用本文件夹里的「让拓竹启动时带上监控.bat」：
     右键它 → 发送到 → 桌面快捷方式，以后用这个图标开 Bambu Studio，
     监控会跟着一起起来。
-    （第一次运行时它会自己找 Bambu Studio；找不到会提示你手改路径）
+
+    注意：同文件夹的 launcher.ps1 要一起保留（它才是真正干活的脚本），
+          两个文件不能拆开，也不能单独改名。
+
+    它会按顺序自动找 Bambu Studio：
+      1) 注册表里登记的安装位置
+      2) C:\Program Files\Bambu Studio 等常见位置
+      3) 开始菜单里的快捷方式
+    找不到会弹窗提示，告诉你怎样手动指定路径。
+    想先确认它能不能找到，可以在这个文件夹打开 PowerShell 运行：
+      powershell -ExecutionPolicy Bypass -File launcher.ps1 -DryRun
 
   ⚠️ 说明：Windows 没有「程序 A 启动时自动运行程序 B」的通用开关，
      所以「打开 Studio 自动弹出」必须靠上面两种方式之一来保证监控在跑。
