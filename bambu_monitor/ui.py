@@ -207,7 +207,8 @@ class AlertPopup(tk.Toplevel):
 # 设置窗口
 # --------------------------------------------------------------------------
 class SettingsDialog(tk.Toplevel):
-    def __init__(self, app: "App"):
+    def __init__(self, app: "App", first_run: bool = False):
+        self.first_run = first_run
         super().__init__(app.root)
         self.app = app
         self.cfg = app.cfg
@@ -367,10 +368,14 @@ class SettingsDialog(tk.Toplevel):
         beh.pack(fill="x", **pad)
         self._check(beh, "auto_connect", "启动后自动连接打印机",
                     self.cfg.behavior.get("auto_connect", True)).pack(side="left")
+        # 首次运行（别人刚拿到）默认勾上：这样打开 Bambu Studio 时监控才能自己出现
+        default_autostart = autostart.is_enabled() or getattr(self, "first_run", False)
+        default_minimized = self.cfg.behavior.get("start_minimized", False) or getattr(
+            self, "first_run", False)
         self._check(beh, "autostart", "开机自动启动",
-                    autostart.is_enabled()).pack(side="left", padx=16)
+                    default_autostart).pack(side="left", padx=16)
         self._check(beh, "start_minimized", "启动时最小化",
-                    self.cfg.behavior.get("start_minimized", False)).pack(side="left")
+                    default_minimized).pack(side="left")
 
         beh2 = tk.Frame(self, bg=BG)
         beh2.pack(fill="x", padx=18, pady=(8, 0))
@@ -384,10 +389,11 @@ class SettingsDialog(tk.Toplevel):
         beh3.pack(fill="x", padx=18, pady=(8, 0))
         self._check(beh3, "exit_on_close", "点关闭按钮时直接退出程序（默认只是缩到任务栏继续监控）",
                     self.cfg.behavior.get("exit_on_close", False)).pack(side="left")
+        hint_fg = ACCENT if getattr(self, "first_run", False) else MUTED
         tk.Label(
             self, text="提示：勾了「开机自动启动 + 启动时最小化」，开机后本程序在后台待命，"
                        "你打开 Bambu Studio 它就会自己出来。",
-            bg=BG, fg=MUTED, font=(self.f, 9), anchor="w", justify="left", wraplength=500,
+            bg=BG, fg=hint_fg, font=(self.f, 9), anchor="w", justify="left", wraplength=500,
         ).pack(fill="x", padx=18, pady=(6, 0))
 
         foot = tk.Frame(self, bg=BG)
@@ -888,12 +894,26 @@ class App:
         # 系统托盘（缺 pystray/Pillow 时自动降级为最小化到任务栏）
         self._tray = None
         self.root.after(300, self._init_tray)
+        # 启动自检：首次运行引导 / 修复被移动导致失效的开机自启
+        self.root.after(700, self._startup_checks)
 
         # 跟随 Bambu Studio：它开着就自动出现在前台
         self.root.after(900, self._poll_bambu)
 
 
     # ---------------- 系统托盘 ----------------
+    def _startup_checks(self) -> None:
+        """修复被移动过的开机自启路径；首次运行时直接打开设置窗。"""
+        try:
+            if autostart.repair_if_stale():
+                self._set_status(t("检测到程序位置有变化，已自动更新开机自启路径"))
+        except Exception as e:  # 自检失败绝不能影响启动
+            LOG.info("开机自启自检失败: %s", e)
+        if getattr(self.cfg, "fresh", False):
+            self.cfg.fresh = False
+            self._set_status(t("首次使用：先点「设置」配置打印机（或登录拓竹账号）"))
+            self.open_settings(first_run=True)
+
     def _init_tray(self) -> None:
         """启动托盘图标；没有 pystray/Pillow 时静默降级为最小化到任务栏。"""
         try:
@@ -1796,8 +1816,8 @@ class App:
         self.root.after(1000, self._tick_clock)
 
     # ---------------- 对外动作 ----------------
-    def open_settings(self) -> None:
-        SettingsDialog(self)
+    def open_settings(self, first_run: bool = False) -> None:
+        SettingsDialog(self, first_run=first_run)
 
     def open_homepage(self) -> None:
         """打开项目主页；打不开浏览器就用程序目录里的本地说明。"""

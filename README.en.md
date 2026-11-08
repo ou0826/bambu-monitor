@@ -13,7 +13,7 @@ Direct LAN connection, zero-config discovery, and Bambu Cloud relay for when the
 [![Release](https://img.shields.io/github/v/release/ou0826/bambu-monitor?color=orange&label=release)](https://github.com/ou0826/bambu-monitor/releases)
 [![Stars](https://img.shields.io/github/stars/ou0826/bambu-monitor?style=social)](https://github.com/ou0826/bambu-monitor/stargazers)
 
-[中文说明](README.md) · [Download](https://github.com/ou0826/bambu-monitor/releases) · [Quick Start](#-quick-start) · [FAQ](#-faq)
+[中文说明](README.md) · [Download](https://github.com/ou0826/bambu-monitor/releases) · [Quick Start](#-quick-start) · [Feature guide](docs/FEATURES.md) · [Dev guide](docs/DEVELOPMENT.md) · [FAQ](#-faq)
 
 </div>
 
@@ -277,6 +277,15 @@ python tests\replay_capture.py tests\fixtures\sample_capture.jsonl   # replay re
 ```
 
 ---
+
+## 📚 Documentation
+
+| Document | Content | Audience |
+|---|---|---|
+| [Feature guide](docs/FEATURES.md) | What each feature does, how to use it, limits, where the code is | Users + maintainers |
+| [Developer guide](docs/DEVELOPMENT.md) | Architecture, protocol, event rules, debugging, build & release | Contributors |
+
+> Both guides are written in Chinese for now — contributors are welcome to translate them.
 
 ## 📁 Project layout
 

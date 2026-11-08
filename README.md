@@ -13,7 +13,7 @@
 [![Release](https://img.shields.io/github/v/release/ou0826/bambu-monitor?color=orange&label=release)](https://github.com/ou0826/bambu-monitor/releases)
 [![Stars](https://img.shields.io/github/stars/ou0826/bambu-monitor?style=social)](https://github.com/ou0826/bambu-monitor/stargazers)
 
-[English](README.en.md) · [下载发布版](https://github.com/ou0826/bambu-monitor/releases) · [快速开始](#-快速开始) · [常见问题](#-常见问题)
+[English](README.en.md) · [下载发布版](https://github.com/ou0826/bambu-monitor/releases) · [快速开始](#-快速开始) · [功能介绍](docs/FEATURES.md) · [开发手册](docs/DEVELOPMENT.md) · [常见问题](#-常见问题)
 
 </div>
 
@@ -280,6 +280,14 @@ python tests\replay_capture.py tests\fixtures\sample_capture.jsonl   # 真实报
 ```
 
 ---
+
+## 📚 文档
+
+| 文档 | 内容 | 适合谁 |
+|---|---|---|
+| [功能介绍](docs/FEATURES.md) | 每个功能做什么、怎么用、边界在哪、代码在哪 | 使用者 + 维护者 |
+| [开发手册](docs/DEVELOPMENT.md) | 架构、协议、事件判定、调试、打包、发布流程 | 贡献者 |
+| [English README](README.en.md) | 英文介绍 | 英文用户 |
 
 ## 📁 项目结构
 

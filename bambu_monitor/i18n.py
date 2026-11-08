@@ -589,3 +589,11 @@ EN.update({
     "余量未知": "Remaining unknown",
     "余量未知（非 RFID 卷）": "Remaining unknown (non-RFID spool)",
 })
+
+
+EN.update({
+    "首次使用：先点「设置」配置打印机（或登录拓竹账号）":
+        "First run — open Settings to configure your printer (or sign in to Bambu).",
+    "检测到程序位置有变化，已自动更新开机自启路径":
+        "The app was moved — its autostart entry was updated automatically.",
+})

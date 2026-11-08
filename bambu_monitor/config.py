@@ -166,6 +166,8 @@ class Config:
         self.path = Path(path) if path else config_path()
         self._lock = threading.RLock()
         self.data = copy.deepcopy(DEFAULT_CONFIG)
+        # 首次运行（还没有配置文件）——用于自动打开设置窗
+        self.fresh = not self.path.exists()
         self.load()
 
     # ---------- 读写 ----------
